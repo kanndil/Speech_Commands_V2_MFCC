@@ -1,0 +1,5 @@
+.vscode
+fixed_mfcc_generator/dat
+fixed_mfcc_generator/bin
+fixed_mfcc_generator/obj
+.DS_Store
