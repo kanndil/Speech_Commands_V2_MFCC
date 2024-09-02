@@ -243,24 +243,36 @@ int main (void){
 
     mfcc_create(&mfcc, MFCC_COEFFS_LEN, MFCC_COEFFS_FIRST, MFCC_TOTAL_NUM_BANK, AUDIO_FRAME_LEN, 0.97f, true);
     string input_path = "dat";
-    std::string output_base_path = "speech_commands_V2_mfcc_version/";
-    std::vector<std::vector<float>> train_data;
-    std::vector<std::vector<float>> test_data;
-    std::vector<std::vector<float>> validate_data;
-    std::vector<std::string> train_label;
-    std::vector<std::string> test_label;
-    std::vector<std::string> validate_label;
+    string output_base_path = "speech_commands_V2_mfcc_version/";
+    string test_list_path = input_path + "/testing_list.txt";
+    string validate_list_path = input_path + "/validation_list.txt";
+    vector<vector<float>> train_data;
+    vector<vector<float>> test_data;
+    vector<vector<float>> validate_data;
+    vector<string> train_label;
+    vector<string> test_label;
+    vector<string> validate_label;
 
     vector<vector<short>> noise_samples = load_noise("dat/_background_noise_/");
 
-    vector<string> test_list = read_file_lines(input_path+ "/" + "testing_list.txt");
-    vector<string> validate_list = read_file_lines(input_path+ "/" + "validation_list.txt");
+    vector<string> test_list = read_file_lines(test_list_path);
+    vector<string> validate_list = read_file_lines(validate_list_path);
 
     reset_directory(output_base_path);
+    string output_directory = output_base_path + '/' + input_path;
 
-    if (!fs::exists(output_base_path+'/'+input_path)) {
-        fs::create_directory(output_base_path+'/'+input_path);
-    }    
+    // Create the output directory if it does not exist
+    if (!fs::exists(output_directory)) {
+        fs::create_directory(output_directory);
+    }
+
+    // Copy the test and validate lists to the output directory
+    try {
+        fs::copy_file(test_list_path, output_directory + "/testing_list.txt", fs::copy_options::overwrite_existing);
+        fs::copy_file(validate_list_path, output_directory + "/validation_list.txt", fs::copy_options::overwrite_existing);
+    } catch (const fs::filesystem_error &e) {
+        cerr << "Error copying files: " << e.what() << endl;
+    }
 
     for (const auto& entry : fs::directory_iterator(input_path)) {
         if (fs::is_directory(entry.status())) {
