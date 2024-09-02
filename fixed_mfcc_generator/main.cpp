@@ -11,7 +11,7 @@
 #include <random>
 #include <algorithm>
 #include <numeric>
-#define DR_WAV_IMPLEMENTATION
+
 using namespace std;
 namespace fs = std::filesystem;
 mfcc_t mfcc;
