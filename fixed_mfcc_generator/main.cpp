@@ -102,15 +102,15 @@ void reset_directory(const std::string& output_base_path) {
 std::vector<float> process_mfcc_audio_data(const std::vector<short>& sig, int rate) {
     int p, i, j;
     int frame_size = 512;
-    int audio_sample_i = 0;  // Initialize audio sample index (make sure it's declared)
+    audio_sample_i = 0;  // Initialize audio sample index (make sure it's declared)
 
     // Ensure that dma_audio_buffer and thread_kws_serv() are defined
     while (1) {
         // Read audio samples from file
 
-        for ( p = audio_sample_i, j = 0; p < audio_sample_i + frame_size; p++, j++)
-            dma_audio_buffer[j] = sig[p];
+        for ( p = audio_sample_i, j = 0; j < frame_size; dma_audio_buffer[j++] = sig[p++]);
             
+        //printf("audio_sample_i in process_mfcc_audio_data: %d\n", audio_sample_i);
         // Process audio samples and compute MFCC features
         thread_kws_serv();
 
@@ -119,11 +119,9 @@ std::vector<float> process_mfcc_audio_data(const std::vector<short>& sig, int ra
         if (audio_sample_i == 15872) // 31*512
             frame_size = 128; // 0.25*512 // Adjust frame size for 50% overlap 
 
-        // Perform inference when enough samples are available
         if (audio_sample_i == 16000) {
             // Reset audio sample index and frame size
             audio_sample_i = 0;
-            frame_size = 512; // Reset frame size for the next iteration
 
             // Flatten the 2D array into a 1D vector
             std::vector<float> ret;
@@ -377,6 +375,8 @@ int main (void){
 
 void thread_kws_serv(void)
 {
+        //printf("audio_sample_i in thread_kws_serv: %d\n", audio_sample_i);
+
         if (audio_sample_i == 15872)
             memset(&dma_audio_buffer[128], 0, sizeof(int) * 384); //to fill the latest quarter in the latest frame
 
