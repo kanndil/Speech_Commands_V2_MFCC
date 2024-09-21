@@ -8,7 +8,7 @@ OBJ_DIR = obj
 BIN_DIR = bin
 
 # Source files
-SRCS = $(SRC_DIR)/main.cpp $(SRC_DIR)/mfcc.cpp
+SRCS = $(SRC_DIR)/main.cpp
 OBJS = $(SRCS:$(SRC_DIR)/%.cpp=$(OBJ_DIR)/%.o)
 
 # Executable
