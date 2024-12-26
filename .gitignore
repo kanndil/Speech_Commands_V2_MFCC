@@ -1,7 +1,7 @@
 .vscode
-fixed_mfcc_generator/dat
-fixed_mfcc_generator/bin
-fixed_mfcc_generator/obj
+/dat
+/bin
+/obj
 .DS_Store
-fixed_mfcc_generator/speech_commands_V2_mfcc_version
-fixed_mfcc_generator/old
+/speech_commands_V2_mfcc_version
+/old

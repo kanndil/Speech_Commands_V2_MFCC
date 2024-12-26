@@ -1,9 +1,9 @@
 # Compiler and flags
 CXX = g++
-CXXFLAGS = -std=c++17 -Wall -Wextra -I/opt/homebrew/include
+CXXFLAGS = -std=c++17 -Wall -Wextra -I/opt/homebrew/include -Iinc
 
 # Directories
-SRC_DIR = .
+SRC_DIR = src
 OBJ_DIR = obj
 BIN_DIR = bin
 
