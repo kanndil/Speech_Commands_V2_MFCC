@@ -3,5 +3,8 @@ fixed_mfcc_generator/dat
 fixed_mfcc_generator/bin
 fixed_mfcc_generator/obj
 .DS_Store
-train_data.npy
+*.npy
 fixed_mfcc_generator/speech_commands_V2_mfcc_version
+fixed_mfcc_generator/old
+fixed_mfcc_generator/speech_commands_V2_mfcc_version_4
+results.csv

@@ -15,23 +15,18 @@
 using namespace std;
 namespace fs = std::filesystem;
 mfcc_t mfcc;
-#define AUDIO_FRAME_LEN (512) //31.25ms * 16000hz = 512, // FFT (windows size must be 2 power n)
+
+
 int dma_audio_buffer[AUDIO_FRAME_LEN]; //512
 int16_t audio_buffer_16bit[(int)(AUDIO_FRAME_LEN*1.5)]; // an easy method for 50% overlapping
 int audio_sample_i = 0;
 int count_number_of_mfccs = 0;
 
-//the mfcc feature for kws
-#define MFCC_LEN            (62)
-#define MFCC_COEFFS_FIRST   (1)     // ignore the mfcc feature before this number
-#define MFCC_COEFFS_LEN     (13)    // the total coefficient to calculate
-#define MFCC_TOTAL_NUM_BANK (26)    // total number of filter bands
-#define MFCC_COEFFS         (MFCC_COEFFS_LEN-MFCC_COEFFS_FIRST)
 
 
-#define MFCC_FEAT_SIZE  (MFCC_LEN * MFCC_COEFFS)
+
 float mfcc_features_f[MFCC_COEFFS];             // output of mfcc
-float mfcc_features[MFCC_LEN][MFCC_COEFFS];     // ring buffer
+float mfcc_features[49][MFCC_COEFFS];     // ring buffer
 uint32_t mfcc_feat_index = 0;
 
 
@@ -99,34 +94,82 @@ void reset_directory(const std::string& output_base_path) {
     }
 }
 
+//std::vector<float> process_mfcc_audio_data(const std::vector<short>& sig, int rate) {
+//    int p, i, j;
+//    int frame_size = 512;
+//    audio_sample_i = 0;  // Initialize audio sample index (make sure it's declared)
+
+//    // Ensure that dma_audio_buffer and thread_kws_serv() are defined
+//    while (1) {
+//        // Read audio samples from file
+
+//        for ( p = audio_sample_i, j = 0; j < frame_size; dma_audio_buffer[j++] = sig[p++]);
+            
+//        //printf("audio_sample_i in process_mfcc_audio_data: %d\n", audio_sample_i);
+//        // Process audio samples and compute MFCC features
+//        thread_kws_serv();
+
+//        // Update audio sample index and adjust frame size for overlap
+//        audio_sample_i += frame_size;
+//        if (audio_sample_i == 15872) // 31*512
+//            frame_size = 128; // 0.25*512 // Adjust frame size for 50% overlap 
+
+//        if (audio_sample_i == 16000) {
+//            // Reset audio sample index and frame size
+//            audio_sample_i = 0;
+
+//            // Flatten the 2D array into a 1D vector
+//            std::vector<float> ret;
+//            ret.reserve(MFCC_LEN * MFCC_COEFFS);
+//            for ( i = 0; i < MFCC_LEN; ++i) {
+//                for ( j = 0; j < MFCC_COEFFS; ++j) {
+//                    ret.push_back(mfcc_features[i][j]);
+//                }
+//            }
+//            return ret;
+//        }
+//    }
+//}
 std::vector<float> process_mfcc_audio_data(const std::vector<short>& sig, int rate) {
     int p, i, j;
-    int frame_size = 512;
     audio_sample_i = 0;  // Initialize audio sample index (make sure it's declared)
+    int count = 0;  
 
     // Ensure that dma_audio_buffer and thread_kws_serv() are defined
     while (1) {
         // Read audio samples from file
 
-        for ( p = audio_sample_i, j = 0; j < frame_size; dma_audio_buffer[j++] = sig[p++]);
-            
-        //printf("audio_sample_i in process_mfcc_audio_data: %d\n", audio_sample_i);
-        // Process audio samples and compute MFCC features
-        thread_kws_serv();
+        for ( p = audio_sample_i, j = 0; j < 480; audio_buffer_16bit[j++] = sig[p++]);
+        //----
+        audio_sample_i+=320;
+        count++;
 
-        // Update audio sample index and adjust frame size for overlap
-        audio_sample_i += frame_size;
-        if (audio_sample_i == 15872) // 31*512
-            frame_size = 128; // 0.25*512 // Adjust frame size for 50% overlap 
+        for (int k = 480; k < 512; k++)
+            audio_buffer_16bit[k] = 0;
 
-        if (audio_sample_i == 16000) {
+
+        mfcc_compute(&mfcc, audio_buffer_16bit, mfcc_features_f);
+        int8_t mfcc_features_f_int8[MFCC_COEFFS];
+
+        quantize_data(mfcc_features_f, mfcc_features_f_int8, MFCC_COEFFS, 0);
+        for (int k = 0; k < MFCC_COEFFS; ++k) {
+            mfcc_features[mfcc_feat_index][k] = mfcc_features_f_int8[k];
+        }
+
+        //memcpy(mfcc_features[mfcc_feat_index], mfcc_features_f, sizeof(mfcc_features_f));
+
+
+        mfcc_feat_index++;
+        if (count == 49) {
             // Reset audio sample index and frame size
             audio_sample_i = 0;
+            count = 0;
+            mfcc_feat_index = 0;
 
             // Flatten the 2D array into a 1D vector
             std::vector<float> ret;
-            ret.reserve(MFCC_LEN * MFCC_COEFFS);
-            for ( i = 0; i < MFCC_LEN; ++i) {
+            ret.reserve(49 * MFCC_COEFFS);
+            for ( i = 0; i < 49; ++i) {
                 for ( j = 0; j < MFCC_COEFFS; ++j) {
                     ret.push_back(mfcc_features[i][j]);
                 }
@@ -239,9 +282,9 @@ void write_float_as_csv(const std::string& output_file_path, const std::vector<f
 
 int main (void){
 
-    mfcc_create(&mfcc, MFCC_COEFFS_LEN, MFCC_COEFFS_FIRST, MFCC_TOTAL_NUM_BANK, AUDIO_FRAME_LEN, 0.97f, true);
+    mfcc_create(&mfcc, MFCC_COEFFS_LEN, MFCC_COEFFS_FIRST, MFCC_TOTAL_NUM_BANK, 480, 0.97f, true);
     string input_path = "dat";
-    string output_base_path = "speech_commands_V2_mfcc_version/";
+    string output_base_path = "speech_commands_V2_mfcc_version_5/";
     string test_list_path = input_path + "/testing_list.txt";
     string validate_list_path = input_path + "/validation_list.txt";
     vector<vector<float>> train_data;
@@ -251,7 +294,7 @@ int main (void){
     vector<string> test_label;
     vector<string> validate_label;
 
-    vector<vector<short>> noise_samples = load_noise("dat/_background_noise_/");
+    //vector<vector<short>> noise_samples = load_noise("dat/_background_noise_/");
 
     vector<string> test_list = read_file_lines(test_list_path);
     vector<string> validate_list = read_file_lines(validate_list_path);
@@ -358,7 +401,7 @@ int main (void){
                     std::string output_file_path = output_base_path+fi_d + "/" + filename + ".mfcc";
                     write_float_as_csv(output_file_path, data);
                 } else {
-                    data = generate_mfcc_fix(sig, sf_info.samplerate, 16000, &noise_samples);
+                    data = generate_mfcc_fix(sig, sf_info.samplerate, 16000);
                     train_data.push_back(data);
                     train_label.push_back(label);
                     // Create the output file path
@@ -421,18 +464,4 @@ void thread_kws_serv(void)
             }
 
         }
-}
-
-void quantize_data(float*din, int8_t *dout, uint32_t size, uint32_t int_bit)
-{
-    #define _MAX(x, y) (((x) > (y)) ? (x) : (y))
-    #define _MIN(x, y) (((x) < (y)) ? (x) : (y))
-    float limit = (1 << int_bit);
-    float d;
-    for(uint32_t i=0; i<size; i++)
-    {
-        d = round(_MAX(_MIN(din[i], limit), -limit) / limit * 128);
-        d = d/128.0f;
-        dout[i] = round(d *127);
-    }
 }
