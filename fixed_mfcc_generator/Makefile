@@ -12,7 +12,7 @@ SRCS = $(SRC_DIR)/main.cpp $(SRC_DIR)/mfcc.cpp
 OBJS = $(SRCS:$(SRC_DIR)/%.cpp=$(OBJ_DIR)/%.o)
 
 # Executable
-TARGET = $(BIN_DIR)/fixed_mfcc_generator
+TARGET = $(BIN_DIR)/main
 
 # Libraries
 LIBS = -lsndfile

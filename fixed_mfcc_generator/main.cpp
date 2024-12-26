@@ -1,4 +1,3 @@
-
 #include <stdlib.h>
 #include <string>
 #include <vector>
@@ -232,27 +231,33 @@ void write_float_as_csv(const std::string& output_file_path, const std::vector<f
 }
 
 
-int main (void){
+int main(int argc, char* argv[]) {
+    if (argc != 3) {
+        std::cerr << "Usage: " << argv[0] << " <input_directory> <output_directory>" << std::endl;
+        return 1;
+    }
+
+    std::string input_path = argv[1];
+    std::string output_base_path = argv[2];
 
     mfcc_create(&mfcc, MFCC_COEFFS_LEN, MFCC_COEFFS_FIRST, MFCC_TOTAL_NUM_BANK, AUDIO_FRAME_LEN, 0.97f, true);
-    string input_path = "dat";
-    string output_base_path = "speech_commands_V2_mfcc_version/";
-    string test_list_path = input_path + "/testing_list.txt";
-    string validate_list_path = input_path + "/validation_list.txt";
-    vector<vector<float>> train_data;
-    vector<vector<float>> test_data;
-    vector<vector<float>> validate_data;
-    vector<string> train_label;
-    vector<string> test_label;
-    vector<string> validate_label;
 
-    vector<vector<short>> noise_samples = load_noise("dat/_background_noise_/");
+    std::string test_list_path = input_path + "/testing_list.txt";
+    std::string validate_list_path = input_path + "/validation_list.txt";
+    std::vector<std::vector<float>> train_data;
+    std::vector<std::vector<float>> test_data;
+    std::vector<std::vector<float>> validate_data;
+    std::vector<std::string> train_label;
+    std::vector<std::string> test_label;
+    std::vector<std::string> validate_label;
 
-    vector<string> test_list = read_file_lines(test_list_path);
-    vector<string> validate_list = read_file_lines(validate_list_path);
+    std::vector<std::vector<short>> noise_samples = load_noise(input_path + "/_background_noise_/");
+
+    std::vector<std::string> test_list = read_file_lines(test_list_path);
+    std::vector<std::string> validate_list = read_file_lines(validate_list_path);
 
     reset_directory(output_base_path);
-    string output_directory = output_base_path + '/' + input_path;
+    std::string output_directory = output_base_path + '/' + input_path;
 
     // Create the output directory if it does not exist
     if (!fs::exists(output_directory)) {
@@ -264,7 +269,7 @@ int main (void){
         fs::copy_file(test_list_path, output_directory + "/testing_list.txt", fs::copy_options::overwrite_existing);
         fs::copy_file(validate_list_path, output_directory + "/validation_list.txt", fs::copy_options::overwrite_existing);
     } catch (const fs::filesystem_error &e) {
-        cerr << "Error copying files: " << e.what() << endl;
+        std::cerr << "Error copying files: " << e.what() << std::endl;
     }
 
     for (const auto& entry : fs::directory_iterator(input_path)) {
