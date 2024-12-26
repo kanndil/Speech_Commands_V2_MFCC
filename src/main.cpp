@@ -10,7 +10,7 @@
 #include <random>
 #include <algorithm>
 #include <numeric>
-
+#include <cstring>
 using namespace std;
 namespace fs = std::filesystem;
 mfcc_t mfcc;
