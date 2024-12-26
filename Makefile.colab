@@ -24,11 +24,11 @@ all: $(TARGET)
 
 $(TARGET): $(OBJS)
 	@mkdir -p $(BIN_DIR)
-	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $(OBJS)
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) -o $@ $(OBJS) -lsndfile
 
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
 	@mkdir -p $(OBJ_DIR)
-	$(CXX) $(CXXFLAGS) -lsndfile -c -o $@ $<
+	$(CXX) $(CXXFLAGS) -c -o $@ $< -lsndfile
 
 clean:
 	rm -rf $(OBJ_DIR) $(BIN_DIR)
